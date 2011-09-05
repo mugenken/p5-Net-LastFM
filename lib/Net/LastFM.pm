@@ -19,6 +19,12 @@ has 'api_secret' => (
     required => 1,
 );
 
+has 'json' => (
+    is => 'rw',
+    isa => 'Bool',
+    default => 0,
+);
+
 has 'ua' => (
     is       => 'rw',
     isa      => 'LWP::UserAgent',
@@ -75,42 +81,27 @@ sub request_signed {
     return $self->_make_request($request);
 }
 
-sub request_json {
-    my ( $self, %conf ) = @_;
-    my $request = $self->create_http_request(%conf);
-    return $self->_make_request_json($request);
-}
-
-sub request_signed_json {
-    my ( $self, %conf ) = @_;
-    my $request = $self->create_http_request_signed(%conf);
-    return $self->_make_request_json($request);
-}
-
 sub _make_request {
     my ( $self, $request ) = @_;
+    my $data;
     my $ua = $self->ua;
 
     my $response = $ua->request($request);
-    my $data     = from_json( $response->content );
 
-    if ( defined $data->{error} ) {
-        my $code    = $data->{error};
-        my $message = $data->{message};
-        confess "$code: $message";
-    } else {
-        return $data;
+    if ($self->json){
+        $data = $response->content;
     }
-}
+    else {
+        $data = from_json( $response->content );
 
-sub _make_request_json {
-    my ( $self, $request ) = @_;
-    my $ua = $self->ua;
+        if ( defined $data->{error} ) {
+            my $code    = $data->{error};
+            my $message = $data->{message};
+            confess "$code: $message";
+        }
+    }
 
-    my $response = $ua->request($request);
-    my $json     = $response->content;
-
-    return $json;
+    return $data;
 }
 
 1;
@@ -126,6 +117,7 @@ Net::LastFM - A simple interface to the Last.fm API
   my $lastfm = Net::LastFM->new(
       api_key    => 'XXX',
       api_secret => 'YYY',
+      json       => 0,
   );
   my $data = $lastfm->request_signed(
       method => 'user.getRecentTracks',
@@ -141,6 +133,8 @@ to receive an API key and secret.
 You can then make requests on the API - most of the requests
 are signed. You pass in a hash of paramters and a data structure
 mirroring the response is returned.
+
+Raw JSON data will be returned if you set the json flag true.
 
 This module confesses if there is an error.
 
