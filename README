@@ -5,6 +5,7 @@ SYNOPSIS
       my $lastfm = Net::LastFM->new(
           api_key    => 'XXX',
           api_secret => 'YYY',
+          json       => 0,
       );
       my $data = $lastfm->request_signed(
           method => 'user.getRecentTracks',
@@ -19,6 +20,8 @@ DESCRIPTION
     You can then make requests on the API - most of the requests are signed.
     You pass in a hash of paramters and a data structure mirroring the
     response is returned.
+
+    Raw JSON data will be returned if you set the json flag true.
 
     This module confesses if there is an error.
 
